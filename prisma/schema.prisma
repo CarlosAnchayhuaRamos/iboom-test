@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CreditStatus {
+  ACTIVE
+  FINALIZADO
+}
+
+enum QuotaStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+model Credit {
+  id             String       @id @default(uuid())
+  userId         String
+  amountTotal    Decimal      @db.Decimal(12, 2)
+  numberOfQuotas Int
+  status         CreditStatus @default(ACTIVE)
+  quotas         Quota[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([userId])
+  @@map("credits")
+}
+
+model Quota {
+  id             String      @id @default(uuid())
+  creditId       String
+  credit         Credit      @relation(fields: [creditId], references: [id], onDelete: Cascade)
+  amount         Decimal     @db.Decimal(12, 2)
+  dueDate        DateTime
+  status         QuotaStatus @default(PENDING)
+  penaltyApplied Boolean     @default(false)
+  paidAt         DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([creditId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("quotas")
+}
+
+model IdempotencyRecord {
+  id           String   @id @default(uuid())
+  key          String
+  method       String
+  path         String
+  requestHash  String
+  statusCode   Int
+  responseBody Json
+  createdAt    DateTime @default(now())
+
+  @@unique([key, method, path])
+  @@map("idempotency_records")
+}
+
+model JobLock {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  lockedAt  DateTime
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("job_locks")
+}

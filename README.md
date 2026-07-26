@@ -25,16 +25,46 @@ El job de mora usa `JobLock` persistente con TTL de 5 minutos. Si otra ejecucion
 ## Ejecutar con Docker
 
 ```bash
-docker-compose up
+docker compose up --build
 ```
 
 Servicios:
 
 - API: `http://localhost:3000`
+- Health: `http://localhost:3000/health`
 - Swagger: `http://localhost:3000/docs`
 - PostgreSQL: `localhost:5432`
 - Kafka local: `localhost:29092`
 - Kafka Docker network: `kafka:9092`
+
+Docker Compose levanta PostgreSQL y Kafka primero, espera sus healthchecks, ejecuta
+`npx prisma migrate deploy` dentro del contenedor API y luego inicia NestJS.
+
+Comandos utiles:
+
+```bash
+docker compose ps
+docker compose logs -f api
+docker compose down
+```
+
+Si cambiaste dependencias, Prisma schema o Dockerfile, reconstruye imagen:
+
+```bash
+docker compose up --build
+```
+
+Verificar API:
+
+```bash
+curl http://localhost:3000/health
+```
+
+Respuesta esperada:
+
+```json
+{"status":"ok"}
+```
 
 ## Ejecutar local
 
